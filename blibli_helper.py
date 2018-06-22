@@ -1,39 +1,64 @@
 import requests
 from bs4 import BeautifulSoup
+import dryscrape
+import csv
 
 
 def get_prdouct_category_and_image(product_urls):
-    print("coming here", len(product_urls))
+    img_cat_data = []
+    count = 0
     for url in product_urls:
-        headers={"Accept" : "application/json, text/javascript, */*; q=0.01",
-                                         "Referer": "https://www.blibli.com/p/canon-bg-e8-baterai-grip-original/ps--SUP-49229-00160?ds=SUP-49229-00160-00001&list=Product%20Listing%20Page",
-                                         "Host": "www.blibli.com",
-                                         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36",
-                                         "Accept-Encoding":"gzip, deflate, br",
-                                         "Accept-Language":"en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
-                                         "X-Requested-With":"XMLHttpRequest"
-                                         }
+        # headers={"Accept" : "application/json, text/javascript, */*; q=0.01",
+        #                                  "Referer": "https://www.blibli.com/p/canon-bg-e8-baterai-grip-original/ps--SUP-49229-00160?ds=SUP-49229-00160-00001&list=Product%20Listing%20Page",
+        #                                  "Host": "www.blibli.com",
+        #                                  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36",
+        #                                  "Accept-Encoding":"gzip, deflate, br",
+        #                                  "Accept-Language":"en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
+        #                                  "X-Requested-With":"XMLHttpRequest"
+        #                                  }
         # headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36'}
-        r = requests.get(url,headers=headers)
-        print (r.content)
-        soup = BeautifulSoup(r.content, 'lxml')
+        # r = requests.get(url,headers=headers)
+        # print (r.content)
 
-        product_image_divs = soup.findAll("div")
+        session = dryscrape.Session()
+        session.visit(url)
+        response = session.body()
+        soup = BeautifulSoup(response, 'lxml')
 
-        print(product_image_divs)
+        product_image_divs = soup.findAll("div", {"class":"product__image-thumbnails--item"})
+
         product_imges = []
         for item in product_image_divs:
-            image_div = item.findAll("div",{"class":"product__image-thumbnails--item"})[0]
-            image_tag = image_div.find("img")
+            image_tag = item.findAll("img")[0]
             url = image_tag.get("src")
+            url=url.replace("thumbnail", "full",1)
             product_imges.append(url)
 
-        print(product_imges)
-        print("categoryies")
-        category_divs = soup.findAll("div",{"class":"breadcrumb"})
-        print(category_divs)
+        # print("categoryies")
+        category_divs = soup.findAll("div",{"class":"breadcrumb__block"})
+        # print(category_divs)
+        categories = []
         for category in category_divs:
-            cat = category.findAll("div",{"class":"breadcrumb__block"})
-            print(cat)
-            label = cat.findAll("span").text
-            print(label)
+            cat = category.findAll("a")[0].findAll("span")[0]
+            categ = cat.text.encode("utf-8")
+            categories.append(categ)
+
+        image_category = {}
+        image_category["image_urls"] = ",".join(product_imges)
+        image_category["cat_label"] = "->".join(categories)
+        img_cat_data.append(image_category)
+
+        write_to_csv("image_data_set",image_category)
+        print ("crawling in progress -> {} ".format(count))
+        count=count+1
+    return img_cat_data
+
+def write_to_csv(csv_file, dict_data):
+    try:
+        with open(csv_file, 'a') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=["cat_label","image_urls"])
+            writer.writeheader()
+            writer.writerow(dict_data)
+    except IOError as (errno, strerror):
+            print("I/O error({0}): {1}".format(errno, strerror))
+    return
