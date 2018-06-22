@@ -14,4 +14,5 @@ for item in product_detail_divs:
     url = item.findAll("a",{"class":"single-product"})[0]
     product_urls.append(url.get("href"))
 
+print(product_urls)
 get_prdouct_category_and_image(product_urls)
