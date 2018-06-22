@@ -1,12 +1,19 @@
 import requests
 from bs4 import BeautifulSoup
 import dryscrape
+from dryscrape.driver.webkit import Driver
 import csv
+import webkit_server
 
 
 def get_prdouct_category_and_image(product_urls):
     img_cat_data = []
     count = 0
+    server = webkit_server.Server()
+    server_conn = webkit_server.ServerConnection(server=server)
+    driver = dryscrape.driver.webkit.Driver(connection=server_conn)
+    session = dryscrape.Session(driver = driver)
+
     for url in product_urls:
         # headers={"Accept" : "application/json, text/javascript, */*; q=0.01",
         #                                  "Referer": "https://www.blibli.com/p/canon-bg-e8-baterai-grip-original/ps--SUP-49229-00160?ds=SUP-49229-00160-00001&list=Product%20Listing%20Page",
@@ -19,20 +26,24 @@ def get_prdouct_category_and_image(product_urls):
         # headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36'}
         # r = requests.get(url,headers=headers)
         # print (r.content)
-
-        session = dryscrape.Session()
+        print ("crawling in progress -> {} ".format(count))
+        print(url)
         session.visit(url)
         response = session.body()
+        # session.set_timeout(30)
+        session.reset()
         soup = BeautifulSoup(response, 'lxml')
-
+        print("data fetched")
         product_image_divs = soup.findAll("div", {"class":"product__image-thumbnails--item"})
 
         product_imges = []
         for item in product_image_divs:
-            image_tag = item.findAll("img")[0]
-            url = image_tag.get("src")
-            url=url.replace("thumbnail", "full",1)
-            product_imges.append(url)
+            image_tag = item.findAll("img")
+            if len(image_tag)!=0:
+                image_tag = image_tag[0]
+                url = image_tag.get("src")
+                url=url.replace("thumbnail", "full",1)
+                product_imges.append(url)
 
         # print("categoryies")
         category_divs = soup.findAll("div",{"class":"breadcrumb__block"})
@@ -49,8 +60,8 @@ def get_prdouct_category_and_image(product_urls):
         img_cat_data.append(image_category)
 
         write_to_csv("image_data_set",image_category)
-        print ("crawling in progress -> {} ".format(count))
         count=count+1
+    server.kill() # the crucial line!
     return img_cat_data
 
 def write_to_csv(csv_file, dict_data):

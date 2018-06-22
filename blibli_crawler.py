@@ -4,7 +4,7 @@ from blibli_helper import get_prdouct_category_and_image
 from blibli_utils import get_product_detail_urls
 import csv
 
-url = "https://www.blibli.com/jual/{product_code}?s={product_code}"
+url = "https://www.blibli.com/jual/"
 
 with open('product_codes.txt') as f:
     lines = f.read().splitlines()
@@ -24,7 +24,7 @@ total = len(lines)
 count=1
 for code in lines:
     print("Running ==> {}/{}".format(count,total) )
-    product_urls = get_product_detail_urls(url)
+    product_urls = get_product_detail_urls(url+code+"?s="+code)
     img_cat_data = get_prdouct_category_and_image(product_urls)
     print("Completed ==> {}/{}".format(count,total) )
     count=count+1
