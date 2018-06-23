@@ -3,17 +3,11 @@ from bs4 import BeautifulSoup
 import dryscrape
 from dryscrape.driver.webkit import Driver
 import csv
-import webkit_server
 
 
 def get_prdouct_category_and_image(product_urls):
     img_cat_data = []
     count = 0
-    server = webkit_server.Server()
-    server_conn = webkit_server.ServerConnection(server=server)
-    driver = dryscrape.driver.webkit.Driver(connection=server_conn)
-    session = dryscrape.Session(driver = driver)
-
     for url in product_urls:
         # headers={"Accept" : "application/json, text/javascript, */*; q=0.01",
         #                                  "Referer": "https://www.blibli.com/p/canon-bg-e8-baterai-grip-original/ps--SUP-49229-00160?ds=SUP-49229-00160-00001&list=Product%20Listing%20Page",
@@ -28,9 +22,10 @@ def get_prdouct_category_and_image(product_urls):
         # print (r.content)
         print ("crawling in progress -> {} ".format(count))
         print(url)
+        session = dryscrape.Session(driver = Driver())
         session.visit(url)
         response = session.body()
-        # session.set_timeout(30)
+        session.set_timeout(30)
         session.reset()
         soup = BeautifulSoup(response, 'lxml')
         print("data fetched")
@@ -59,9 +54,8 @@ def get_prdouct_category_and_image(product_urls):
         image_category["cat_label"] = "->".join(categories)
         img_cat_data.append(image_category)
 
-        write_to_csv("image_data_set",image_category)
+        write_to_csv("image_data_set700_800",image_category)
         count=count+1
-    server.kill() # the crucial line!
     return img_cat_data
 
 def write_to_csv(csv_file, dict_data):

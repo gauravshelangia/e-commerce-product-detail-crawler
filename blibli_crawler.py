@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from blibli_helper import get_prdouct_category_and_image
 from blibli_utils import get_product_detail_urls
 import csv
+import time
 
 url = "https://www.blibli.com/jual/"
 
@@ -22,9 +23,10 @@ def WriteDictToCSV(csv_file,dict_data):
 
 total = len(lines)
 count=1
-for code in lines:
-    print("Running ==> {}/{}".format(count,total) )
-    product_urls = get_product_detail_urls(url+code+"?s="+code)
+for i in range(220,300):
+    print("Running ==> {}/{}".format(i,total) )
+    product_urls = get_product_detail_urls(url+lines[i]+"?s="+lines[i])
     img_cat_data = get_prdouct_category_and_image(product_urls)
-    print("Completed ==> {}/{}".format(count,total) )
+    print("Completed ==> {}/{}".format(i,total) )
+    time.sleep(3)
     count=count+1
